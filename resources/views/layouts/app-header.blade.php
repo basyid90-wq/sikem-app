@@ -49,9 +49,12 @@
             </button>
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden">
-                <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-                <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+            <a href="/" class="xl:hidden flex items-center gap-2">
+                <img src="/images/logo/jata-negeri-perak.png" alt="SiKEM Logo" class="h-8 w-auto" />
+                <div class="flex flex-col leading-tight">
+                    <span class="text-base font-bold text-brand-500">SiKEM</span>
+                    <span class="text-[9px] text-gray-400 dark:text-gray-500 whitespace-nowrap">Sistem Integrasi Kebajikan Mualaf</span>
+                </div>
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->

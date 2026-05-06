@@ -1,34 +1,89 @@
-# rujukan.md
-> System instructions for AI, not standard documentation.
+# Sistem Arahan Induk — SiKEM (Vibe Coding)
 
-## Context
-- I am a [Developer/Super Admin] building `[SiKEM - Sistem Integrasi Kebajikan Mualaf]` for `[Unit Dakwah Pejabat Agama Daerah Manjung]`.
-- Main Tech Stack: Laravel 13, TALL Stack (Tailwind, Alpine.js, Livewire), and TailAdmin template integration.
-- AI Agents Collaboration: 
-  1. Web UI (Gemini Flash / Gemini 3.1 Pro / Claude Sonnet 4.6 / Claude Opus 4.6) for brainstorming & complex logic.
-  2. CLI (Claude Opus 4.6) for execution and writing code directly in the directory.
-- Communication Tone: Direct, technical, zero fluff. Note that I will prompt you in a mix of English and colloquial Malay (Northern dialect). You must understand the context but avoid using Indonesian terms (e.g., avoid *bikin, perbarui, unduh*) in your responses.
+## 1. Konteks & Peranan Ejen
+- **Projek:** SiKEM — Sistem Integrasi Kebajikan Mualaf
+- **Tech Stack:** Laravel 12, TALL Stack (Tailwind, Alpine.js, Livewire), template TailAdmin
+- **Mod:** Vibe Coding Full Auto — Code → Test → Fix → Commit → Push → VPS deploy
+- **Akses Seeder:**
+  - Super Admin: `basyid90@gmail.com` / `901022aspura`
 
-## How I Work (Phased Concept)
-- **MANDATORY:** You must work in phases. Do not generate excessively long files or code blocks in a single response.
-- **First Task (Phase 1):** Start with the Laravel installation from A-Z (Setup, database config, TailAdmin integration). Stop and wait for my instruction before moving to the next phase.
-- Always ask for my confirmation upon completing a phase before proceeding.
+---
 
-## Playbooks & Cross-References
-- ERD & Overall Modules: **[MANDATORY REFERENCE]** Always refer to the `sikem_erd.md` file in the root directory.
-- **Auto-Update Instruction:** If I instruct any additions, logic changes, or database modifications during our conversation, you are **required** to auto-update the `sikem_erd.md` file automatically so it stays synced with the latest context.
-- Initial Data Setup (Seeder):
-  - Super Admin Login: `basyid90@gmail.com`
-  - Password: `901022aspura`
+## 2. Gaya Komunikasi
+- Ringkas, teknikal, zero fluff.
+- Arahan dalam campuran Bahasa Inggeris dan loghat Melayu Utara — ikut je.
+- **PANTANG:** Dilarang guna terma Indonesia (*bikin, perbarui, unduh, penerapan*). Guna terma Malaysia atau Inggeris terus.
 
-## Do Not
-- ❌ Do not invent database structures that deviate from `sikem_erd.md`.
-- ❌ Do not provide lengthy explanations. Focus strictly on terminal commands and code blocks.
-- ❌ Do not modify existing files or code without referencing or briefly stating which part is being touched.
+---
 
-## How to Ask
-- ✅ Stop before: Doing a major rewrite or moving to a new phase.
-- ✅ Phase completion: Ask "Phase completed. Should we proceed to the next phase?"
-- ✅ Blocked/Confused?: Ask ONE sharp and specific question. Do not guess blindly.
+## 3. Peraturan Operasi
 
-- UI Requirement: MANDATORY to strictly use the existing TailAdmin UI components. Do not invent custom UI design if a TailAdmin equivalent exists.
+| ✅ Buat | ❌ Jangan |
+|--------|----------|
+| Kerja berfasa — jangan output beratus baris sekaligus | Reka struktur DB di luar `sikem_erd.md` |
+| Tanya selepas tiap fasa: *"Fasa selesai. Teruskan?"* | Syarah panjang — fokus kod & terminal |
+| Guna komponen TailAdmin yang sedia ada | Reka UI custom kalau TailAdmin dah ada |
+| Kemaskini `sikem_erd.md` bila ada perubahan DB | Tinggal `dd()`, `dump()`, `console.log()` dalam kod |
+
+---
+
+## 4. Dokumentasi Dinamik
+- Rujuk `sikem_erd.md` setiap kali ada perubahan DB atau logik.
+- Kemaskini `sikem_erd.md` serta-merta bila tambah/ubah jadual atau fungsi.
+
+---
+
+## 5. Aliran Kerja Full Auto
+
+### Fasa A — Code & Fix
+- Tulis logik, controller, model, komponen ikut arahan.
+- Bila ada error log, kaji merentas fail dan betulkan terus.
+
+### Fasa B — Test (Pest PHP)
+- Tulis test Pest PHP untuk logik kritikal.
+- Abaikan browser test (Dusk). Jalankan auto di terminal. Gagal → betul → ulang.
+
+### Fasa C — Commit & Push (Auto — AI buat, bukan user)
+```bash
+git add <fail-yang-berubah>
+git commit -m "type: ringkasan perubahan"
+git push origin main
+```
+> Jika repo belum wujud: `gh repo create sikem --private --source=. --remote=origin --push`
+
+### Fasa D — Deploy (VPS)
+Selepas push, **beritahu user jalankan arahan ini di VPS:**
+
+```bash
+# Wajib setiap kali
+git pull origin main
+php artisan migrate --force
+php artisan config:cache && php artisan view:clear && php artisan cache:clear
+
+# Jika ada route baru
+php artisan route:clear && php artisan route:cache
+
+# Jika ada class Tailwind baru
+npm run build
+```
+
+---
+
+## 6. Maklumat VPS
+
+| Perkara | Nilai |
+|---------|-------|
+| IP | `103.175.50.99` |
+| SSH | `ssh -p 58882 root@103.175.50.99` |
+| Folder projek | `/var/www/sikem.my` |
+| Web server | Nginx (`/etc/nginx/sites-available/sikem.my`) |
+| PHP | 8.4 (`php8.4-fpm`) |
+| Database | `tailadmin_laravel` (MySQL) |
+| Domain | `https://sikem.my` |
+
+---
+
+## 7. Nota Penting
+- `public/build/` adalah gitignored — Tailwind **tidak** di-build otomatik di VPS. Guna `npm run build` bila ada class baru.
+- Fail `.env` VPS **tidak** dalam git — urus secara manual di VPS.
+- Nginx dan php8.4-fpm mesti running. Semak: `systemctl status nginx php8.4-fpm`
