@@ -12,8 +12,7 @@ class ZiarahManager extends Component
     use WithPagination;
 
     public $search = '';
-    public $activeTab = 'kritikal';
-    public $selectedKariah = '';
+    public $activeTab = '';
     public $isModalOpen = false;
     public $selectedMualafId;
     public $selectedMualaf;
@@ -25,9 +24,13 @@ class ZiarahManager extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'activeTab' => ['except' => 'kritikal'],
-        'selectedKariah' => ['except' => '']
+        'activeTab' => ['except' => ''],
     ];
+
+    public function mount()
+    {
+        $this->activeTab = (string) now()->year;
+    }
 
     public function updatingSearch()
     {
@@ -39,9 +42,10 @@ class ZiarahManager extends Component
         $this->resetPage();
     }
 
-    public function updatingSelectedKariah()
+    public function getDynamicTabsProperty()
     {
-        $this->resetPage();
+        $y = now()->year;
+        return range($y, $y - 4);
     }
 
     public function render()
@@ -54,34 +58,15 @@ class ZiarahManager extends Component
                   ->orWhere('no_ic', 'like', '%' . $this->search . '%');
             });
 
-        // Filter by Kariah
-        if ($this->selectedKariah) {
-            $query->where('kariah_id', $this->selectedKariah);
-        }
-
-        // Filter by Tab (Priority)
-        if ($this->activeTab === 'kritikal') {
-            $query->where(function($q) {
-                $q->whereDoesntHave('ziarahLogs')
-                  ->orWhereHas('ziarahLogs', function($sub) {
-                      $sub->whereIn('id', function($in) {
-                          $in->selectRaw('max(id)')->from('ziarah_logs')->groupBy('mualaf_id');
-                      })->where('tarikh_ziarah', '<', now()->subMonths(6));
-                  });
-            });
-        } elseif ($this->activeTab === 'terkini') {
-            $query->whereHas('ziarahLogs', function($sub) {
-                $sub->whereIn('id', function($in) {
-                    $in->selectRaw('max(id)')->from('ziarah_logs')->groupBy('mualaf_id');
-                })->where('tarikh_ziarah', '>=', now()->subMonths(6));
-            });
+        // Filter by Tahun Syahadah
+        if (is_numeric($this->activeTab)) {
+            $query->whereYear('tarikh_syahadah', $this->activeTab);
         }
 
         $mualafs = $query->latest()->paginate(10);
 
         return view('livewire.ziarah-manager', [
             'mualafs' => $mualafs,
-            'kariahs' => \App\Models\Kariah::orderBy('nama_kariah')->get(),
             'history' => $this->selectedMualafId ? ZiarahLog::with('user')->where('mualaf_id', $this->selectedMualafId)->latest('tarikh_ziarah')->get() : []
         ])->extends('layouts.app')->section('content');
     }
