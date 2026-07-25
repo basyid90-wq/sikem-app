@@ -51,8 +51,13 @@ class MualafManager extends Component
     public $isImportOpen = false;
     public $isViewOpen = false;
     public $viewingMualaf = null;
-    public $activeTab = 'aktif';
+    public $activeTab = '';
     public $search = '';
+
+    public function mount()
+    {
+        $this->activeTab = (string) now()->year;
+    }
 
     protected function rules()
     {
@@ -249,23 +254,13 @@ class MualafManager extends Component
                       ->orWhere('no_ic', 'like', '%' . $this->search . '%');
             });
 
-        // Metrik Statistik Dinamik (Berdasarkan Tahun jika dipilih)
-        $statsQuery = clone $baseQuery;
-        if (is_numeric($this->activeTab)) {
-            $statsQuery->whereYear('tarikh_syahadah', $this->activeTab);
-        }
-
-        $countAktif = (clone $statsQuery)->where('is_aktif', true)->count();
-        $countArkib = (clone $statsQuery)->where('is_aktif', false)->count();
-        $countTotal = $countAktif + $countArkib;
+        // Statistik Global (tidak difilter ikut tahun tab)
+        $countLostContact = Mualaf::where('is_aktif', false)->count();
+        $countKeseluruhan = Mualaf::count();
 
         // Data Listing (Berdasarkan Tab Aktif)
         $query = clone $baseQuery;
-        if ($this->activeTab === 'aktif') {
-            $query->where('is_aktif', true);
-        } elseif ($this->activeTab === 'arkib') {
-            $query->where('is_aktif', false);
-        } elseif (is_numeric($this->activeTab)) {
+        if (is_numeric($this->activeTab)) {
             $query->whereYear('tarikh_syahadah', $this->activeTab);
         }
 
@@ -274,9 +269,8 @@ class MualafManager extends Component
         return view('livewire.mualaf-manager', [
             'mualafs' => $mualafs,
             'kariahs' => Kariah::orderBy('nama_kariah')->get(),
-            'totalAktif' => $countAktif,
-            'totalArkib' => $countArkib,
-            'totalSemua' => $countTotal
+            'totalLostContact' => $countLostContact,
+            'totalKeseluruhan' => $countKeseluruhan,
         ]);
     }
 }

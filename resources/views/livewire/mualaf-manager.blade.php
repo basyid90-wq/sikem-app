@@ -26,14 +26,14 @@
     @endif
 
     <!-- BAHAGIAN ATAS: Dashboard-First Statistics -->
-    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <div>
-                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Mualaf Aktif {{ is_numeric($activeTab) ? '('.$activeTab.')' : '' }}</span>
-                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($totalAktif) }}</span>
+                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Keseluruhan</span>
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($totalKeseluruhan) }}</span>
             </div>
         </div>
 
@@ -42,18 +42,8 @@
                 <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
             </div>
             <div>
-                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Rekod Arkib {{ is_numeric($activeTab) ? '('.$activeTab.')' : '' }}</span>
-                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($totalArkib) }}</span>
-            </div>
-        </div>
-
-        <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-gray-800 dark:bg-white/[0.03]">
-            <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <div>
-                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Keseluruhan {{ is_numeric($activeTab) ? '('.$activeTab.')' : '' }}</span>
-                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($totalSemua) }}</span>
+                <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">Lost Contact</span>
+                <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ number_format($totalLostContact) }}</span>
             </div>
         </div>
     </div>
@@ -61,15 +51,6 @@
     <!-- BAHAGIAN TENGAH: Navigasi Tabs Dinamik -->
     <div class="mb-6 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-800">
-            <button wire:click="$set('activeTab', 'aktif')" 
-                class="relative px-6 py-3 text-sm font-semibold transition-all {{ $activeTab === 'aktif' ? 'text-brand-500 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-brand-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}">
-                🟢 Aktif
-            </button>
-            <button wire:click="$set('activeTab', 'arkib')" 
-                class="relative px-6 py-3 text-sm font-semibold transition-all {{ $activeTab === 'arkib' ? 'text-brand-500 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-brand-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}">
-                📦 Arkib (Lost Contact)
-            </button>
-            
             @foreach($this->dynamicTabs as $year)
                 <button wire:click="$set('activeTab', '{{ $year }}')" 
                     class="relative px-6 py-3 text-sm font-semibold transition-all {{ $activeTab == $year ? 'text-brand-500 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-brand-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' }}">
@@ -163,7 +144,7 @@
                             <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="mb-2 h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                    <p class="text-sm">Tiada rekod mualaf dijumpai dalam senarai {{ $activeTab }}.</p>
+                                    <p class="text-sm">Tiada rekod mualaf dijumpai dalam senarai {{ is_numeric($activeTab) ? 'Tahun '.$activeTab : $activeTab }}.</p>
                                 </div>
                             </td>
                         </tr>
