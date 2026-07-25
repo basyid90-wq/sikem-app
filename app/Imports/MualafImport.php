@@ -5,22 +5,11 @@ namespace App\Imports;
 use App\Models\Mualaf;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Carbon\Carbon;
 
-class MualafImport implements ToModel, WithStartRow, WithMultipleSheets, SkipsEmptyRows
+class MualafImport implements ToModel, WithStartRow, SkipsEmptyRows
 {
-    public function sheets(): array
-    {
-        return [
-            0 => $this,
-            1 => $this,
-            2 => $this,
-            3 => $this,
-        ];
-    }
-
     public function startRow(): int
     {
         return 1; // Start from very top and handle row-by-row
@@ -30,72 +19,72 @@ class MualafImport implements ToModel, WithStartRow, WithMultipleSheets, SkipsEm
     {
         // 1. Ekstrak No IC (Utamakan index 3)
         $raw_ic = $row[3] ?? null;
-        
-        // Hanya cari di kolum lain jika index 3 kosong/tidak sah
         if (!$this->isValidIC($raw_ic)) {
             foreach ($row as $index => $cell) {
-                // Jangan cari di kolum Nama (index 1 & 2)
                 if ($index == 1 || $index == 2) continue;
-                
-                if ($this->isValidIC($cell)) {
-                    $raw_ic = $cell;
-                    break;
-                }
+                if ($this->isValidIC($cell)) { $raw_ic = $cell; break; }
             }
         }
-
         $no_ic = $raw_ic ? trim(preg_replace('/[^a-zA-Z0-9]/', '', $raw_ic)) : null;
+        if (empty($no_ic) || strlen($no_ic) < 5) return null;
 
-        // Jika tiada IC yang sah, abaikan
-        if (empty($no_ic) || strlen($no_ic) < 5) {
-            return null;
-        }
-
-        // 2. Semak kewujudan No IC
-        if (Mualaf::where('no_ic', $no_ic)->exists()) {
-            return null; // skip duplicate
-        }
-
-        // 3. Nama Penuh (Islam) - Biasanya index 2
+        // 2. Nama Penuh (Islam) - index 2
         $nama_islam = $row[2] ?? null;
-        if (empty($nama_islam) || strtoupper($nama_islam) == 'NAMA ISLAM') return null;
+        if (empty($nama_islam) || strtoupper(trim($nama_islam)) == 'NAMA ISLAM') return null;
 
-        // 4. Bersihkan Tarikh (Index 10 atau 7)
+        // 3. Tarikh syahadah (index 10 atau 7)
         $tarikh_syahadah = $this->parseDate($row[10] ?? $row[7] ?? null);
 
-        // 5. Gabungkan lokasi (Index 7, 8, 9)
+        // 4. Gabungkan lokasi (index 7, 8, 9)
         $negeri = trim($row[7] ?? '');
         $nama_daerah_excel = trim($row[8] ?? '');
         $tempat = trim($row[9] ?? '');
         $tempat_syahadah = trim(implode(' - ', array_filter([$negeri, $nama_daerah_excel, $tempat])));
 
-        // 6. Cari daerah_id berdasarkan nama daerah dalam excel
+        // 5. Cari daerah_id
         $daerah_id = auth()->user()->daerah_id ?? null;
         if (!empty($nama_daerah_excel)) {
             $daerah = \App\Models\Daerah::where('nama_daerah', 'like', '%' . $nama_daerah_excel . '%')->first();
-            if ($daerah) {
-                $daerah_id = $daerah->id;
+            if ($daerah) $daerah_id = $daerah->id;
+        }
+
+        // 6. UMUR (index 12) -> anggaran tarikh_lahir
+        $tarikh_lahir = null;
+        $umurRaw = $row[12] ?? null;
+        if (is_numeric($umurRaw)) {
+            $umur = (int) $umurRaw;
+            if ($umur > 0 && $umur < 120) {
+                $refYear = $tarikh_syahadah ? (int) substr($tarikh_syahadah, 0, 4) : now()->year;
+                $tarikh_lahir = ($refYear - $umur) . '-01-01';
             }
         }
 
-        return new Mualaf([
-            'no_ic'              => $no_ic,
+        // 7. Susun data
+        $data = [
             'nama_penuh'         => trim($nama_islam),
             'nama_asal'          => trim($row[1] ?? ''),
-            'jantina'            => trim($row[11] ?? ($row[9] == 'L' || $row[9] == 'P' ? $row[9] : '')),
+            'jantina'            => trim($row[11] ?? ''),
             'bangsa_asal'        => trim($row[5] ?? ''),
-            'tarikh_lahir'       => $this->parseDate($row[12] ?? null),
-            'no_telefon'         => trim($row[16] ?? $row[14] ?? ''),
+            'tarikh_lahir'       => $tarikh_lahir,
+            'no_telefon'         => trim($row[16] ?? ''),
             'pekerjaan'          => trim($row[6] ?? ''),
             'status_perkahwinan' => trim($row[13] ?? ''),
-            'bil_anak'           => is_numeric($row[14] ?? null) ? (int)$row[14] : 0,
+            'bil_anak'           => is_numeric($row[14] ?? null) ? (int) $row[14] : 0,
             'tarikh_syahadah'    => $tarikh_syahadah,
             'tempat_syahadah'    => $tempat_syahadah,
             'daerah_id'          => $daerah_id,
-            'kariah_id'          => null,
             'alamat_terkini'     => trim($row[4] ?? ''),
-            'status_kematian'    => (isset($row[15]) && (str_contains(strtolower($row[15]), 'meninggal') || $row[15] === true)) ? 1 : 0,
-        ]);
+            'status_kematian'    => (isset($row[15]) && (str_contains(strtolower((string) $row[15]), 'meninggal') || $row[15] === true)) ? 1 : 0,
+        ];
+
+        // Buang nilai kosong ('' atau null) supaya tidak menimpa data sedia ada semasa UPDATE.
+        // Nota: 0 (cth bil_anak, status_kematian) DIKEKALKAN.
+        $data = array_filter($data, fn($v) => $v !== '' && $v !== null);
+
+        // Upsert ikut no_ic. is_aktif TIDAK disentuh (kekal status lost-contact sedia ada).
+        Mualaf::updateOrCreate(['no_ic' => $no_ic], $data);
+
+        return null; // upsert dibuat manual, jangan biar ToModel insert semula
     }
 
     private function isValidIC($value)
